@@ -18,21 +18,20 @@ import java.util.List;
 public class ApoliceServiceImpl implements ApoliceService {
 
     private final ApoliceRepository apoliceRepository;
-    private final ApoliceMapper mapper;
 
-    public ApoliceServiceImpl(ApoliceRepository apoliceRepository, ApoliceMapper mapper) {
+    public ApoliceServiceImpl(ApoliceRepository apoliceRepository) {
         this.apoliceRepository = apoliceRepository;
-        this.mapper = mapper;
     }
 
     @Override
     @Transactional(rollbackOn = Exception.class)
     public void criarApolice(ApoliceRequest request, Integer usuarioId) {
-        Apolice apolice = mapper.toEntity(request, usuarioId);
+        Apolice apolice = ApoliceMapper.toEntity(request, usuarioId);
         apoliceRepository.save(apolice);
     }
 
     @Override
+    @Transactional(rollbackOn = Exception.class)
     public void atualizarApolice(ApoliceRequest request, Integer usuarioId) {
         if (request.id() == null) {
             throw new RuntimeException("Id da request não pode ser null"); //Todo -> criar Exception personalizada
@@ -77,17 +76,17 @@ public class ApoliceServiceImpl implements ApoliceService {
     }
 
     @Override
-    public List<ApoliceResponse> buscarApolicePeloId(Integer apoliceId) {
+    public List<ApoliceResponse> buscaApolicePorIdOuTodas(Integer apoliceId) {
         if(apoliceId != null) {
             Apolice apolice = apoliceRepository.findById(apoliceId)
                     .orElseThrow(() -> new RuntimeException("Id de apolice não existe"));
 
-            return List.of(mapper.toResponse(apolice));
+            return List.of(ApoliceMapper.toResponse(apolice));
         }
 
         return apoliceRepository.findAll()
                 .stream()
-                .map(mapper::toResponse)
+                .map(ApoliceMapper::toResponse)
                 .toList();
     }
 
