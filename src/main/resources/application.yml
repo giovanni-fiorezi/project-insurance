@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: insurance
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/insurance_db
+    username: user
+    password: 1234
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
