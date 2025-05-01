@@ -33,6 +33,7 @@ public class ApoliceServiceImpl implements ApoliceService {
     }
 
     @Override
+    @Transactional(rollbackOn = Exception.class)
     public void atualizarApolice(ApoliceRequest request, Integer usuarioId) {
         if (request.id() == null) {
             throw new RuntimeException("Id da request não pode ser null"); //Todo -> criar Exception personalizada
