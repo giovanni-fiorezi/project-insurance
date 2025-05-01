@@ -77,7 +77,7 @@ public class ApoliceServiceImpl implements ApoliceService {
     }
 
     @Override
-    public List<ApoliceResponse> buscarApolicePeloId(Integer apoliceId) {
+    public List<ApoliceResponse> buscaApolicePorIdOuTodas(Integer apoliceId) {
         if(apoliceId != null) {
             Apolice apolice = apoliceRepository.findById(apoliceId)
                     .orElseThrow(() -> new RuntimeException("Id de apolice não existe"));

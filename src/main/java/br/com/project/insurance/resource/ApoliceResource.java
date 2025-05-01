@@ -1,11 +1,14 @@
 package br.com.project.insurance.resource;
 
 import br.com.project.insurance.dto.request.ApoliceRequest;
+import br.com.project.insurance.dto.response.ApoliceResponse;
 import br.com.project.insurance.service.ApoliceService;
 import jakarta.websocket.server.PathParam;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/apolice")
@@ -29,5 +32,9 @@ public class ApoliceResource {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-
+    @GetMapping("/{apoliceId}")
+    public ResponseEntity<List<ApoliceResponse>> buscaApolicePorIdOuTodas (@PathParam("apoliceId") Integer apoliceId) {
+        List<ApoliceResponse> response = apoliceService.buscaApolicePorIdOuTodas(apoliceId);
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
 }
