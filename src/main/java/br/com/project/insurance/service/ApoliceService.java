@@ -12,4 +12,6 @@ public interface ApoliceService {
     void atualizarApolice(ApoliceRequest apolice, Integer usuarioId);
 
     List<ApoliceResponse> buscaApolicePorIdOuTodas(Integer apoliceId);
+
+
 }

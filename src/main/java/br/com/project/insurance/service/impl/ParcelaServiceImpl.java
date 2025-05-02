@@ -7,6 +7,7 @@ import br.com.project.insurance.listener.dto.PagamentoApoliceParcelaEvent;
 import br.com.project.insurance.listener.dto.PagamentoParcelaItemEvent;
 import br.com.project.insurance.repository.ParcelaRepository;
 import br.com.project.insurance.service.ParcelaService;
+import br.com.project.insurance.service.exception.ParcelaNaoEncontradaException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +31,7 @@ public class ParcelaServiceImpl implements ParcelaService {
         for (PagamentoParcelaItemEvent event : apoliceEvent.parcelas()) {
 
             Parcela parcela = repository.findById(event.id())
-                            .orElseThrow(() -> new RuntimeException("Parcela não encontrada: " + event.id()));
+                            .orElseThrow(() -> new ParcelaNaoEncontradaException("Parcela não encontrada: " + event.id()));
 
             String formaPagamento = event.formaPagamento().toUpperCase();
 
