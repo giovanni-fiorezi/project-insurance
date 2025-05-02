@@ -34,7 +34,7 @@ public class Apolice {
 
     private Integer usuarioAlteracaoRegistro;
 
-    @OneToMany(mappedBy = "apolice", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "apolice", cascade = CascadeType.ALL)
     private List<Parcela> parcelas = new ArrayList<>();
 
     public Integer getId() {
