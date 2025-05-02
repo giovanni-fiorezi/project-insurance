@@ -32,9 +32,11 @@ public class ApoliceServiceImpl implements ApoliceService {
 
     private static final Logger log = LoggerFactory.getLogger(ApoliceServiceImpl.class);
     private final ApoliceRepository apoliceRepository;
+    private final ApoliceMapper mapper;
 
-    public ApoliceServiceImpl(ApoliceRepository apoliceRepository) {
+    public ApoliceServiceImpl(ApoliceRepository apoliceRepository, ApoliceMapper mapper) {
         this.apoliceRepository = apoliceRepository;
+        this.mapper = mapper;
     }
 
     @Override
