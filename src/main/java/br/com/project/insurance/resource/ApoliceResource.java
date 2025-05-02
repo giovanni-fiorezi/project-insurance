@@ -6,6 +6,7 @@ import br.com.project.insurance.service.ApoliceService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,5 +42,11 @@ public class ApoliceResource {
     public ResponseEntity<List<ApoliceResponse>> buscarTodasAsApolices () {
         List<ApoliceResponse> response = apoliceService.buscaApolicePorIdOuTodas(null);
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadCsv(@RequestParam("file")MultipartFile file) {
+        apoliceService.uploadCsv(file);
+        return ResponseEntity.status(HttpStatus.OK).body("Arquivo processado com sucesso");
     }
 }

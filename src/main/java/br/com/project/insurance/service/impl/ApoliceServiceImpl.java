@@ -10,13 +10,19 @@ import br.com.project.insurance.repository.ApoliceRepository;
 import br.com.project.insurance.service.ApoliceService;
 import br.com.project.insurance.service.exception.ApoliceNaoEncontradaException;
 import br.com.project.insurance.service.exception.FalhaAtualizacaoApoliceException;
+import br.com.project.insurance.service.exception.ProcessamentoArquivoException;
 import br.com.project.insurance.service.exception.RequisicaoInvalidaException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,10 +43,10 @@ public class ApoliceServiceImpl implements ApoliceService {
         try {
             Apolice apolice = ApoliceMapper.toEntity(request, usuarioId);
             apoliceRepository.save(apolice);
+
         } catch (DataIntegrityViolationException ex) {
             throw new RequisicaoInvalidaException("Dados inválidos para criar a apólice.");
         }
-
     }
 
     @Override
@@ -53,8 +59,10 @@ public class ApoliceServiceImpl implements ApoliceService {
         try {
             Apolice apolice = buildApolice(request, usuarioId);
             apoliceRepository.save(apolice);
+
         } catch (ApoliceNaoEncontradaException ex) {
             throw ex;
+
         } catch (Exception e) {
             log.error("Erro ao atualizar a apolice com ID {}: {}", request.id(), e.getMessage(), e);
             throw new FalhaAtualizacaoApoliceException("Erro ao atualizar apolice");
@@ -74,6 +82,19 @@ public class ApoliceServiceImpl implements ApoliceService {
                 .stream()
                 .map(ApoliceMapper::toResponse)
                 .toList();
+    }
+
+    @Override
+    public String uploadCsv(MultipartFile file) {
+        try {
+            String uploadDir = "src/main/resources/"; // Salvar o arquivo dentro do Resource
+            Path filePath = Paths.get(uploadDir + file.getOriginalFilename());
+            Files.copy(file.getInputStream(), filePath);
+            return "Arquivo salvo com sucesso.";
+
+        } catch (IOException e) {
+            throw new ProcessamentoArquivoException("Erro ao processar planilha: " + e.getMessage());
+        }
     }
 
     private Apolice buildApolice(ApoliceRequest request, Integer usuarioId) {
@@ -112,6 +133,4 @@ public class ApoliceServiceImpl implements ApoliceService {
         apolice.setParcelas(parcelas);
         return apolice;
     }
-
-
 }
