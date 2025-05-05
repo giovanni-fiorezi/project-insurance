@@ -43,7 +43,7 @@ public class ApoliceServiceImpl implements ApoliceService {
     @Transactional
     public void criarApolice(ApoliceRequest request, Integer usuarioId) {
         try {
-            Apolice apolice = ApoliceMapper.toEntity(request, usuarioId);
+            Apolice apolice = mapper.toEntity(request, usuarioId);
             apoliceRepository.save(apolice);
 
         } catch (DataIntegrityViolationException ex) {
@@ -77,19 +77,20 @@ public class ApoliceServiceImpl implements ApoliceService {
             Apolice apolice = apoliceRepository.findById(apoliceId)
                     .orElseThrow(() -> new ApoliceNaoEncontradaException("Id de apolice não existe"));
 
-            return List.of(ApoliceMapper.toResponse(apolice));
+            return List.of(mapper.toResponse(apolice));
         }
 
         return apoliceRepository.findAll()
                 .stream()
-                .map(ApoliceMapper::toResponse)
+                .map(mapper::toResponse)
                 .toList();
     }
 
     @Override
     public String uploadCsv(MultipartFile file) {
         try {
-            String uploadDir = "src/main/resources/"; // Salvar o arquivo dentro do Resource
+            String uploadDir = "src/main/resources/";
+            Files.createDirectories(Paths.get(uploadDir));
             Path filePath = Paths.get(uploadDir + file.getOriginalFilename());
             Files.copy(file.getInputStream(), filePath);
             return "Arquivo salvo com sucesso.";
