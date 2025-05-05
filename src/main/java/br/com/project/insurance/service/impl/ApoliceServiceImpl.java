@@ -89,7 +89,8 @@ public class ApoliceServiceImpl implements ApoliceService {
     @Override
     public String uploadCsv(MultipartFile file) {
         try {
-            String uploadDir = "src/main/resources/"; // Salvar o arquivo dentro do Resource
+            String uploadDir = "src/main/resources/";
+            Files.createDirectories(Paths.get(uploadDir));
             Path filePath = Paths.get(uploadDir + file.getOriginalFilename());
             Files.copy(file.getInputStream(), filePath);
             return "Arquivo salvo com sucesso.";

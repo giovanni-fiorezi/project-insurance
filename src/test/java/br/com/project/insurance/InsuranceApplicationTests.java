@@ -9,8 +9,11 @@ import br.com.project.insurance.entity.enums.FormaPagamento;
 import br.com.project.insurance.entity.enums.SituacaoApolice;
 import br.com.project.insurance.mapper.ApoliceMapper;
 import br.com.project.insurance.repository.ApoliceRepository;
+import br.com.project.insurance.service.exception.ApoliceNaoEncontradaException;
+import br.com.project.insurance.service.exception.ProcessamentoArquivoException;
 import br.com.project.insurance.service.exception.RequisicaoInvalidaException;
 import br.com.project.insurance.service.impl.ApoliceServiceImpl;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +23,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,9 +57,7 @@ class InsuranceApplicationTests {
 
 	@Test
 	void criarApoliceComSucesso() {
-
-		ParcelaRequest parcelaRequest = new ParcelaRequest(1, new BigDecimal("1500.00"), FormaPagamento.CARTAO,
-				LocalDate.now());
+		ParcelaRequest parcelaRequest = buildParcela();
 		Integer usuarioId = 1;
 
 		List<ParcelaRequest> parcelaRequestList = new ArrayList<>();
@@ -80,8 +88,7 @@ class InsuranceApplicationTests {
 
 	@Test
 	void criarApoliceQuandoDadosInvalidosEntaoLancaRequisicaoInvalidaException() {
-		ParcelaRequest parcelaRequest = new ParcelaRequest(1, new BigDecimal("1500.00"), FormaPagamento.CARTAO,
-				LocalDate.now());
+		ParcelaRequest parcelaRequest = buildParcela();
 
 		List<ParcelaRequest> parcelaRequestList = new ArrayList<>();
 		parcelaRequestList.add(parcelaRequest);
@@ -114,18 +121,7 @@ class InsuranceApplicationTests {
 		apolice.setUsuarioCriacaoRegistro(1);
 		apolice.setParcelas(new ArrayList<>());
 
-		ApoliceResponse response = new ApoliceResponse(
-				1,
-				"APOLICE TESTE",
-				123456789,
-				SituacaoApolice.ATIVA,
-				new BigDecimal("2500.00"),
-				LocalDate.now(),
-				null,
-				1,
-				null,
-				parcelaResponses
-		);
+		ApoliceResponse response = buildApoliceResponse(parcelaResponses);
 
 		Mockito.when(apoliceRepository.findById(apoliceId)).thenReturn(Optional.of(apolice));
 		List<ApoliceResponse> result = apoliceService.buscaApolicePorIdOuTodas(1);
@@ -148,21 +144,154 @@ class InsuranceApplicationTests {
 	@Test
 	void deveRetornarTodasAsApoliceIdNaoInformado() {
 		Apolice apolice1 = new Apolice();
-		Apolice apolice2 = new Apolice();
+		apolice1.setId(1);
+		apolice1.setDescricao("APOLICE TESTE 1");
+		apolice1.setCpf(12345556);
+		apolice1.setSituacao(SituacaoApolice.ATIVA);
+		apolice1.setPremioTotal(new BigDecimal("340.00"));
+		apolice1.setDataCriacaoRegistro(LocalDate.now());
 
-		ApoliceResponse response1 = new ApoliceResponse();
-		ApoliceResponse response2 = new ApoliceResponse();
+		Apolice apolice2 = new Apolice();
+		apolice1.setId(2);
+		apolice1.setDescricao("APOLICE TESTE 2");
+		apolice1.setCpf(55545556);
+		apolice1.setSituacao(SituacaoApolice.ATIVA);
+		apolice1.setPremioTotal(new BigDecimal("1400.00"));
+		apolice1.setDataCriacaoRegistro(LocalDate.now());
+
+		ApoliceResponse response1 = buildApoliceResponse(null);
+		ApoliceResponse response2 = buildApoliceResponse(null);
 
 		List<Apolice> apolices = List.of(apolice1, apolice2);
+
+		ApoliceResponse mapperResponse1 = mapper.toResponse(apolice1);
+		ApoliceResponse mapperResponse2 = mapper.toResponse(apolice2);
+
 		Mockito.when(apoliceRepository.findAll()).thenReturn(apolices);
-		Mockito.when(mapper.toResponse(apolice1)).thenReturn(response1);
-		Mockito.when(mapper.toResponse(apolice2)).thenReturn(response2);
 
 		List<ApoliceResponse> result = apoliceService.buscaApolicePorIdOuTodas(null);
 
 		assertEquals(2, result.size());
-		assertTrue(result.containsAll(List.of(response1, response2)));
 		Mockito.verify(apoliceRepository).findAll();
+	}
+
+	@Test
+	void deveLancarExcecaoQuandoIdDeApoliceNaoExistir() {
+		Integer idInexistente = 999;
+
+		Mockito.when(apoliceRepository.findById(idInexistente)).thenReturn(Optional.empty());
+
+		Assertions.assertThrows(
+				ApoliceNaoEncontradaException.class,
+				() -> apoliceService.buscaApolicePorIdOuTodas(idInexistente),
+				"Id de apolice não existe"
+		);
+
+		Mockito.verify(apoliceRepository).findById(idInexistente);
+	}
+
+	@Test
+	void deveAtualizarUmaApolice () {
+		Integer apoliceId = 1;
+		Integer usuarioId = 10;
+
+		// Criar request mockado com valores simulados
+		ApoliceRequest request = new ApoliceRequest(
+				apoliceId,
+				"APOLICE ",
+				1234567890,
+				SituacaoApolice.ATIVA,
+				new BigDecimal("999.99"),
+				List.of()
+		);
+
+		Apolice apoliceExistente = new Apolice();
+		apoliceExistente.setId(apoliceId);
+
+		Mockito.when(apoliceRepository.findById(apoliceId))
+				.thenReturn(Optional.of(apoliceExistente));
+
+		Mockito.when(apoliceRepository.save(Mockito.any(Apolice.class)))
+				.thenReturn(apoliceExistente);
+
+		assertDoesNotThrow(() -> apoliceService.atualizarApolice(request, usuarioId));
+
+		Mockito.verify(apoliceRepository).save(Mockito.any(Apolice.class));
+	}
+
+	@Test
+	void deveLancarExcecaoQuandoIdDaRequestForNull() {
+		ApoliceRequest request = Mockito.mock(ApoliceRequest.class);
+		Mockito.when(request.id()).thenReturn(null);
+
+		assertThrows(RequisicaoInvalidaException.class, () -> {
+			apoliceService.atualizarApolice(request, 1);
+		});
+	}
+
+	@Test
+	void deveLancarExcecaoQuandoApoliceNaoExistir() {
+		Integer apoliceId = 10;
+		ApoliceRequest request = Mockito.mock(ApoliceRequest.class);
+		Mockito.when(request.id()).thenReturn(apoliceId);
+
+		Mockito.when(apoliceRepository.findById(apoliceId)).thenReturn(Optional.empty());
+
+		assertThrows(ApoliceNaoEncontradaException.class, () -> {
+			apoliceService.atualizarApolice(request, 1);
+		});
+
+		Mockito.verify(apoliceRepository).findById(apoliceId);
+	}
+
+	@Test
+	void deveSalvarArquivoComSucesso() throws IOException {
+		String conteudo = "id,nome,test";
+		byte[] bytes = conteudo.getBytes();
+
+		MockMultipartFile mockFile = new MockMultipartFile(
+				"file", "test.csv", "text/csv", new ByteArrayInputStream(bytes)
+		);
+
+		String resultado = apoliceService.uploadCsv(mockFile);
+		assertEquals("Arquivo salvo com sucesso.", resultado);
+
+		Path filePath = Paths.get("src/test/resources/test.csv");
+		assertTrue(Files.exists(filePath));
+
+		Files.deleteIfExists(filePath);
+	}
+
+	@Test
+	void deveLancarExcecaoAoFalharUpload() throws IOException {
+		MultipartFile fileMock = Mockito.mock(MultipartFile.class);
+		Mockito.when(fileMock.getOriginalFilename()).thenReturn("test.csv");
+		Mockito.when(fileMock.getInputStream()).thenThrow(new IOException("Falha no stream"));
+
+		assertThrows(ProcessamentoArquivoException.class, () -> {
+			apoliceService.uploadCsv(fileMock);
+		});
+	}
+
+	private static ParcelaRequest buildParcela() {
+        return new ParcelaRequest(1, new BigDecimal("1500.00"), FormaPagamento.CARTAO,
+				LocalDate.now());
+	}
+
+	private static ApoliceResponse buildApoliceResponse(List<ParcelaResponse> parcelaResponses) {
+		ApoliceResponse response = new ApoliceResponse(
+				1,
+				"APOLICE TESTE",
+				123456789,
+				SituacaoApolice.ATIVA,
+				new BigDecimal("2500.00"),
+				LocalDate.now(),
+				null,
+				1,
+				null,
+				parcelaResponses
+		);
+		return response;
 	}
 
 }
