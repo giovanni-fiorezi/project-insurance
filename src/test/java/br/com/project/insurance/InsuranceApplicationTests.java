@@ -52,7 +52,7 @@ class InsuranceApplicationTests {
 
 	@BeforeEach
 	void setUp() {
-		apoliceService = new ApoliceServiceImpl(apoliceRepository, mapper);
+		apoliceService = new ApoliceServiceImpl(apoliceRepository);
 	}
 
 	@Test
@@ -256,7 +256,7 @@ class InsuranceApplicationTests {
 		String resultado = apoliceService.uploadCsv(mockFile);
 		assertEquals("Arquivo salvo com sucesso.", resultado);
 
-		Path filePath = Paths.get("src/test/resources/test.csv");
+		Path filePath = Paths.get("src/main/resources/test.csv");
 		assertTrue(Files.exists(filePath));
 
 		Files.deleteIfExists(filePath);

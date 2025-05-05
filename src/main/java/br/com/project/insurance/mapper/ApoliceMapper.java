@@ -6,6 +6,7 @@ import br.com.project.insurance.dto.response.ParcelaResponse;
 import br.com.project.insurance.entity.Apolice;
 import br.com.project.insurance.entity.Parcela;
 import br.com.project.insurance.entity.enums.SituacaoParcela;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -13,7 +14,7 @@ import java.util.List;
 
 public class ApoliceMapper {
 
-    public Apolice toEntity(ApoliceRequest dto, Integer usuarioId) {
+    public static Apolice toEntity(ApoliceRequest dto, Integer usuarioId) {
         Apolice apolice = new Apolice();
         apolice.setDescricao(dto.descricao());
         apolice.setCpf(dto.cpf());
@@ -40,7 +41,7 @@ public class ApoliceMapper {
         return apolice;
     }
 
-    public ApoliceResponse toResponse(Apolice apolice) {
+    public static ApoliceResponse toResponse(Apolice apolice) {
         List<ParcelaResponse> parcelas = apolice.getParcelas()
                 .stream()
                 .map(p -> new ParcelaResponse(
