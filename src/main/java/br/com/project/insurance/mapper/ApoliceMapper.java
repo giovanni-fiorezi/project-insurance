@@ -13,7 +13,7 @@ import java.util.List;
 
 public class ApoliceMapper {
 
-    public static Apolice toEntity(ApoliceRequest dto, Integer usuarioId) {
+    public Apolice toEntity(ApoliceRequest dto, Integer usuarioId) {
         Apolice apolice = new Apolice();
         apolice.setDescricao(dto.descricao());
         apolice.setCpf(dto.cpf());
@@ -40,7 +40,7 @@ public class ApoliceMapper {
         return apolice;
     }
 
-    public static ApoliceResponse toResponse(Apolice apolice) {
+    public ApoliceResponse toResponse(Apolice apolice) {
         List<ParcelaResponse> parcelas = apolice.getParcelas()
                 .stream()
                 .map(p -> new ParcelaResponse(
