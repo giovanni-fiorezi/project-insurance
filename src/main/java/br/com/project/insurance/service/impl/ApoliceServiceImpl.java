@@ -32,18 +32,16 @@ public class ApoliceServiceImpl implements ApoliceService {
 
     private static final Logger log = LoggerFactory.getLogger(ApoliceServiceImpl.class);
     private final ApoliceRepository apoliceRepository;
-    private final ApoliceMapper mapper;
 
-    public ApoliceServiceImpl(ApoliceRepository apoliceRepository, ApoliceMapper mapper) {
+    public ApoliceServiceImpl(ApoliceRepository apoliceRepository) {
         this.apoliceRepository = apoliceRepository;
-        this.mapper = mapper;
     }
 
     @Override
     @Transactional
     public void criarApolice(ApoliceRequest request, Integer usuarioId) {
         try {
-            Apolice apolice = mapper.toEntity(request, usuarioId);
+            Apolice apolice = ApoliceMapper.toEntity(request, usuarioId);
             apoliceRepository.save(apolice);
 
         } catch (DataIntegrityViolationException ex) {
@@ -77,12 +75,12 @@ public class ApoliceServiceImpl implements ApoliceService {
             Apolice apolice = apoliceRepository.findById(apoliceId)
                     .orElseThrow(() -> new ApoliceNaoEncontradaException("Id de apolice não existe"));
 
-            return List.of(mapper.toResponse(apolice));
+            return List.of(ApoliceMapper.toResponse(apolice));
         }
 
         return apoliceRepository.findAll()
                 .stream()
-                .map(mapper::toResponse)
+                .map(ApoliceMapper::toResponse)
                 .toList();
     }
 
